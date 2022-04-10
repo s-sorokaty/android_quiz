@@ -3,6 +3,7 @@ package com.example.myapplication123;
 import androidx.appcompat.app.AppCompatActivity;
 
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,7 +19,18 @@ public class MainActivity extends AppCompatActivity {
     private Button mFalseButton;
     private Button mNextButton;
     private TextView mQuestionTextView;
+    private int mCurrentIndex = 0;
+    private static final String TAG = "MainActivity";
+    private static final String KEY_INDEX = "index";
+    private static final int REQUEST_CODE_CHEAT = 0;
+    private boolean mIsCheater;
 
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        Log.i(TAG, "onSaveInstanceState");
+        savedInstanceState.putInt(KEY_INDEX, mCurrentIndex);
+    }
 
 
     private Question[] mQuestionBank = new Question[]{
@@ -29,8 +41,7 @@ public class MainActivity extends AppCompatActivity {
             new Question(R.string.question_americas, true),
             new Question(R.string.question_asia, true),
     };
-    private int mCurrentIndex = 0;
-    private static final String TAG = "QuizActivity";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
         mNextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                mIsCheater = false;
                 mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
                 int question =
                         mQuestionBank[mCurrentIndex].getmTextResId();
@@ -69,13 +81,31 @@ public class MainActivity extends AppCompatActivity {
             mCheatButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // Проверяем какой ответ на текущий вопрос
+                boolean answerIsTrue =
+                        mQuestionBank[mCurrentIndex].ismAnswerTrue();
                 // Запуск CheatActivity
+                CheatActivity.newIntent(MainActivity.this, answerIsTrue);
                 Intent intent =
                         new Intent(MainActivity.this, CheatActivity.class);
                 startActivity(intent);
             }
         });
     }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent
+            data) {
+        if (resultCode != Activity.RESULT_OK) {
+            return;
+        }
+        if (requestCode == REQUEST_CODE_CHEAT) {
+            if (data == null) {
+                return;
+            }
+           mIsCheater = CheatActivity.wasAnswerShown(data);
+        }
+    }
+
     @Override
     public void onStart() {
         super.onStart();
@@ -106,10 +136,15 @@ public class MainActivity extends AppCompatActivity {
         boolean answerIsTrue =
                 mQuestionBank[mCurrentIndex].ismAnswerTrue();
         int messageResId = 0;
-        if (userPressedTrue == answerIsTrue) {
-            messageResId = R.string.correct_toast;
+        // Просматривался ли ответ
+        if (mIsCheater) {
+            messageResId = R.string.judgment_toast;
         } else {
-            messageResId = R.string.incorrect_toast;
+            if (userPressedTrue == answerIsTrue) {
+                messageResId = R.string.correct_toast;
+            } else {
+                messageResId = R.string.incorrect_toast;
+            }
         }
         Toast.makeText(this, messageResId, Toast.LENGTH_SHORT)
                 .show();

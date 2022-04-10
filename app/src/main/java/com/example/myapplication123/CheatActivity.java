@@ -17,6 +17,8 @@ public class CheatActivity extends AppCompatActivity {
     private Button mShowAnswerButton;
     private static final String EXTRA_ANSWER_IS_TRUE =
             "com.example.dev.Geo.answer_is_true";
+    private static final String EXTRA_ANSWER_SHOWN =
+            "com.example.dev.Geo.answer_shown";
 
     public static Intent newIntent(Context packageContext,
                                    boolean answerIsTrue) {
@@ -35,7 +37,6 @@ public class CheatActivity extends AppCompatActivity {
                 getIntent().getBooleanExtra(EXTRA_ANSWER_IS_TRUE, false);
         mAnswerTextView = (TextView) findViewById(R.id.answer_text_view);
         mShowAnswerButton = (Button) findViewById(R.id.show_answer_button);
-        // Проверяем полученный ответ
         mShowAnswerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -44,7 +45,20 @@ public class CheatActivity extends AppCompatActivity {
                 } else {
                     mAnswerTextView.setText(R.string.false_button);
                 }
+                // Пользователь просмотрел ответ
+                setAnswerShownResult(true);
             }
         });
     }
+    private void setAnswerShownResult(boolean isAnswerShown) {
+        Intent data = new Intent();
+        // Помещаем в интент данные, что ответ просмотрен
+        data.putExtra(EXTRA_ANSWER_SHOWN, isAnswerShown);
+        setResult(RESULT_OK, data);
+    }
+    // Забираем данные из интента о просмотренном ответе
+    public static boolean wasAnswerShown(Intent result) {
+        return result.getBooleanExtra(EXTRA_ANSWER_SHOWN, false);
+    }
+
 }
